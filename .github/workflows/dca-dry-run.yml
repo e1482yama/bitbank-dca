@@ -22,7 +22,7 @@ jobs:
       BITBANK_API_KEY: ${{ secrets.BITBANK_API_KEY }}
       BITBANK_API_SECRET: ${{ secrets.BITBANK_API_SECRET }}
       LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-      LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+      LINE_USER_ID: ${{ secrets.LINE_TO_USER_ID }}
 
       # 任意の変数（あれば）
       DCA_TOTAL_JPY: ${{ vars.DCA_TOTAL_JPY }}
