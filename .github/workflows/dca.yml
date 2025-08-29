@@ -1,43 +1,66 @@
-
-name: Weekly DCA (Bitbank)
+name: Bitbank DCA (Live)
 
 on:
   schedule:
-    - cron: "0 22 * * 0"  # Sun 22:00 UTC = Mon 07:00 JST
+    # 毎週月曜 09:00 JST = 00:00 UTC
+    - cron: "0 0 * * MON"
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: "本当に実発注しますか？ yes と入力してください"
+        required: true
+        default: "no"
+
+permissions:
+  contents: read
+
+# 同時走行防止
+concurrency:
+  group: dca-live
+  cancel-in-progress: true
+
+# （任意）環境プロテクションを使う場合
+# environment:
+#   name: production
 
 jobs:
-  run:
+  live:
+    if: ${{ github.event_name == 'schedule' || github.event.inputs.confirm == 'yes' }}
     runs-on: ubuntu-latest
+
+    env:
+      BITBANK_API_KEY: ${{ secrets.BITBANK_API_KEY }}
+      BITBANK_API_SECRET: ${{ secrets.BITBANK_API_SECRET }}
+      LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+      LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+
+      # ← ここが超重要：コード側ゲートに一致させる
+      DCA_LIVE: "1"
+
+      # 任意の変数
+      DCA_TOTAL_JPY: ${{ vars.DCA_TOTAL_JPY }}
+      GUARD_DIP_THRESHOLD: ${{ vars.DCA_GUARD_DIP_THRESHOLD }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.9"
 
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run DCA
-        env:
-          TOTAL_JPY: ${{ vars.TOTAL_JPY }}
-          PAIRS: ${{ vars.PAIRS }}
-          WEIGHTS: ${{ vars.WEIGHTS }}
-          SLIPPAGE_PCT: ${{ vars.SLIPPAGE_PCT }}
-          SPREAD_MAX_PCT: ${{ vars.SPREAD_MAX_PCT }}
-          VOL5M_MAX_PCT: ${{ vars.VOL5M_MAX_PCT }}
-          DIP_TRIGGER_PCT: ${{ vars.DIP_TRIGGER_PCT }}
-          DIP_MULTIPLIER: ${{ vars.DIP_MULTIPLIER }}
-          LOW_BALANCE_ALERT_JPY: ${{ vars.LOW_BALANCE_ALERT_JPY }}
-          TIME_WINDOW_MS: ${{ vars.TIME_WINDOW_MS }}
-          AUTH_MODE: ${{ vars.AUTH_MODE }}
-          BITBANK_API_KEY: ${{ secrets.BITBANK_API_KEY }}
-          BITBANK_API_SECRET: ${{ secrets.BITBANK_API_SECRET }}
-          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
+      - name: Safety echo
         run: |
-          python -m app.main --dry-run
+          echo "DCA_LIVE=$DCA_LIVE"
+          echo "This run will PLACE REAL ORDERS."
+
+      - name: Live execution
+        run: |
+          # --live フラグ運用にしている場合は付ける
+          python -m app.main
