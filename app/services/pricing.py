@@ -7,6 +7,7 @@ from typing import List, Tuple
 
 from app.core.models import Quote
 from app.core.ports import PublicPricePort
+from app.core.errors import InfraError
 
 JST = timezone(timedelta(hours=9))
 
@@ -105,15 +106,34 @@ def vol5m_pct(pub: PublicPricePort, pair: str) -> float:
     - データ不足時は 0.0
     """
     today = _yyyymmdd_jst()
-    cj = pub.candlestick(pair, "5min", today)
+    used_today = True
+    try:
+        cj = pub.candlestick(pair, "5min", today)
+    except InfraError as e:
+        # bitbankのcandlestickは当日バケット未生成タイミングで404になることがある
+        if "-> 404" in str(e):
+            yday = _yyyymmdd_jst(datetime.now(JST) - timedelta(days=1))
+            cj = pub.candlestick(pair, "5min", yday)
+            used_today = False
+        else:
+            raise
     closes = _latest_two_closes_from_candles(cj)
 
     if len(closes) < 2:
-        # 前日を追加で参照
-        yday = _yyyymmdd_jst(datetime.now(JST) - timedelta(days=1))
-        cj2 = pub.candlestick(pair, "5min", yday)
-        closes2 = _latest_two_closes_from_candles(cj2)
-        closes = (closes2 + closes)[-2:]  # 古い→新しいの順で2本に揃える
+        if used_today:
+            # 今日は本数不足 → 前日を追加で参照
+            yday = _yyyymmdd_jst(datetime.now(JST) - timedelta(days=1))
+            cj2 = pub.candlestick(pair, "5min", yday)
+        else:
+            # 昨日でフォールバック済み → 念のため今日も試す
+            cj2 = None
+            try:
+                cj2 = pub.candlestick(pair, "5min", today)
+            except InfraError as e:
+                if "-> 404" not in str(e):
+                    raise
+        closes2 = _latest_two_closes_from_candles(cj2) if cj2 else []
+        closes = (closes2 + closes)[-2:]
 
     if len(closes) < 2 or closes[-2] == 0:
         return 0.0
