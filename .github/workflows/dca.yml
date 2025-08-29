@@ -32,7 +32,7 @@ jobs:
       BITBANK_API_KEY: ${{ secrets.BITBANK_API_KEY }}
       BITBANK_API_SECRET: ${{ secrets.BITBANK_API_SECRET }}
       LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-      LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+      LINE_TO_USER_ID: ${{ secrets.LINE_TO_USER_ID }}
 
       # ← ここが超重要：コード側ゲートに一致させる
       DCA_LIVE: "1"
