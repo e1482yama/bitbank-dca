@@ -31,7 +31,7 @@ class Config:
     bitbank_api_secret: str
 
     # LINE
-    line_channel_token: str
+    line_channel_access_token: str
     line_to_user_id: str
 
     # DCA 設定
@@ -53,7 +53,7 @@ def load_config() -> Config:
         bitbank_api_secret=_getenv("BITBANK_API_SECRET", required=True),
 
         # LINE
-        line_channel_token=_getenv("LINE_CHANNEL_ACCESS_TOKEN", required=True),
+        line_channel_access_token=_getenv("LINE_CHANNEL_ACCESS_TOKEN", required=True),
         line_to_user_id=_getenv("LINE_TO_USER_ID", required=True),
 
         # DCA
