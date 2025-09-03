@@ -66,7 +66,7 @@ def run(dry_run: bool = True) -> int:
     # --- clients ---
     pub = BitbankPublicClient()
     prv = BitbankPrivateClient(cfg.bitbank_api_key, cfg.bitbank_api_secret)
-    notifier = LineMessagingNotifier(cfg.line_channel_token, cfg.line_to_user_id)
+    notifier = LineMessagingNotifier(cfg.line_channel_access_token, cfg.line_to_user_id)
 
     # --- budget & base allocations ---
     total_jpy = int(cfg.dca_total_jpy)
